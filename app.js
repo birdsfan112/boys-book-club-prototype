@@ -117,8 +117,7 @@ function vShelf() {
 function vJournal() {
   return '<header class="hdr"><div><div class="h xl">JOURNAL</div><div class="lbl">Private to you and Claude</div></div></header>' +
     '<button class="btn or wide" data-a="chat">' + IC.mic + 'Talk about your book</button>' +
-    '<div class="card"><p><b>Private by default.</b> Your friends never see these conversations, so ramble and say how you really feel. The club gets Claude\'s short summary plus a few snippets of your own words that back it up, never the whole entry.</p>' +
-    '<p class="fine">Straight talk: Scott hosts the app, so the database lives in his account and he could technically open it. How that gets locked down is something the club decides before launch.</p></div>' +
+    '<div class="card"><p><b>Private by default.</b> Your friends never see these conversations, so ramble and say how you really feel. The club gets Claude\'s short summary plus a few snippets of your own words that back it up, never the whole entry.</p></div>' +
     D.journal.map(j => '<div class="card"><div class="row"><div class="lbl or grow">' + j.d + ' · ' + esc(j.at) + '</div></div><div class="nm">' + D.books[j.book].t + '</div><blockquote>“' + esc(j.q) + '”</blockquote></div>').join('');
 }
 
