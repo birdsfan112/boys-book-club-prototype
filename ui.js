@@ -5,12 +5,26 @@ const WRAPN = [
   { p: 48, at: '48%', line: 'Scott thinks the specific entities are the most inventive part so far.', q: 'The specific entities are very creative and interesting.' },
   { p: 48, at: '48%', line: 'He is curious where the story is headed from here.', q: "I'm very curious where we go from here." }
 ];
+// The tour opens the real page each step is describing. go() sets that page up on a scratch state
+// (the reader's own state is saved in TS and put back at the end). spot = the part of the page to outline and scroll to.
+const convo = n => D.script.slice(0, n).reduce((a, s, i) => a.concat(i < n - 1 ? [{ c: s.c }, { u: s.chips[0] }] : [{ c: s.c }]), []);
 const TOUR = [
-  ['Talk about your book', 'Tell Claude what you think of what you are reading. Type, dictate, or hold the mic and ramble. It asks good questions and remembers what you said last time.'],
-  ['Ramble. Claude does the sharing', "Your friends never see the conversation, so say how you really feel and skip the proofreading. Claude writes a short, spoiler-free summary for the club and backs it up with a few snippets of your own words. Edit it, drop a snippet, or keep the whole thing to yourself."],
-  ['Spoilers stay locked', "Your friends' detailed notes are stamped with where they were in the book. Each one unlocks only after you pass that point."],
-  ['Find your next book', 'Recs come from your own shelf and from what the club is loving. Or just ask Claude for something.']
+  { t: 'Talk about your book', d: 'Tell Claude what you think of what you are reading. Type, dictate, or hold the mic and ramble. It asks good questions and remembers what you said last time.',
+    go() { S.page = ['chat']; S.chat = convo(3); S.step = 2; S.ended = false; } },
+  { t: 'Ramble. Claude does the sharing', d: 'Your friends never see the conversation, so say how you really feel and skip the proofreading. Claude writes this short, spoiler-free summary for the club and backs it up with a few snippets of your own words. Edit it, drop a snippet, or keep the whole thing to yourself.',
+    spot: '.card.pc', go() { S.page = ['chat']; S.chat = convo(4); S.step = 3; S.ended = true; S.draft = D.draft; S.share = [true, true]; } },
+  { t: 'Your journal keeps it all', d: 'Every conversation is saved here. It stays private to you and Claude.',
+    go() { S.page = null; S.tab = 'journal'; } },
+  { t: 'The club gets the short version', d: "Claude's summary lands here, next to the guys' postcards. Every postcard is short and spoiler-free, and an emoji is all it takes to react.",
+    spot: 'article', go() { S.page = null; S.tab = 'club'; S.myPct = 48; S.extra = [{ id: 'tour', who: 'scott', run: 'scott-anti', when: 'Just now', where: 'about 48%', text: D.draft }]; } },
+  { t: 'Spoilers stay locked', d: "This is Owen's read of Project Hail Mary. Each of his detailed notes is stamped with where he was in the book, and it unlocks only after you pass that point.",
+    spot: '#notes', go() { S.page = ['book', 'owen-phm']; S.pos.phm = 10; } },
+  { t: 'Your shelf', d: 'Every book you have read, with what you said about it at the time.',
+    go() { S.page = null; S.tab = 'shelf'; } },
+  { t: 'Find your next book', d: 'Recs come from your own shelf and from what the club is loving. Or just ask Claude for something.',
+    go() { S.page = null; S.tab = 'recs'; } }
 ];
+const tourReset = () => { const own = JSON.parse(TS); Object.keys(S).forEach(k => delete S[k]); Object.assign(S, own); };
 const goHome = () => { closeSheet(); S.page = null; S.tab = 'club'; render(); };
 
 // ---------- Journal chat (scripted) ----------
@@ -42,7 +56,7 @@ function composer() {
 function chatPaint(keep) { if (!S.page || S.page[0] !== 'chat') return; const v = $('#view'), top = v.scrollTop; v.innerHTML = vChat(); v.scrollTop = keep ? top : v.scrollHeight; }
 function say(text, diag) {
   text = String(text || '').trim().slice(0, 600);
-  if (!text || S.typing) return;
+  if (!text || S.typing || TS !== null) return;
   S.chat.push({ u: text, diag: diag });
   S.ended = false; // saying more reopens the conversation; the share card comes back at the next Done
   S.step++; S.typing = true; chatPaint();
@@ -59,7 +73,7 @@ function say(text, diag) {
 let rec = null;
 function micDown(e) {
   e.preventDefault();
-  if (rec || S.typing) return;
+  if (rec || S.typing || TS !== null) return;
   const r = rec = { t0: Date.now(), chunks: [] };
   $('#mic').classList.add('live'); $('#say').placeholder = 'Recording... let go to send';
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { r.err = 'no microphone access in this browser'; return; }
@@ -140,12 +154,20 @@ Object.assign(ACT, {
   },
   tour(v) {
     const i = +v || 0, T = TOUR[i];
-    if (!T) { closeSheet(); return; }
-    const last = i === TOUR.length - 1;
-    openSheet('<div class="lbl or">Quick tour · ' + (i + 1) + ' of ' + TOUR.length + '</div><div class="h xl">' + T[0] + '</div><p>' + T[1] + '</p>' +
-      (i ? '' : '<p class="fine">This is a mockup: sample data, scripted replies, nothing is saved. You are seeing the app as Scott, and the other guys are made up.</p>') +
-      '<div class="row">' + (last ? '' : '<button class="btn sm sec" data-a="close">Skip</button>') + '<button class="btn sm or wide" data-a="tour" data-v="' + (i + 1) + '">' + (last ? 'Got it' : 'Next') + '</button></div>');
+    if (TS === null) { if (S.typing) return; closeSheet(); $('#toast').classList.remove('on'); TS = JSON.stringify(S); }
+    if (!T) { ACT.tourend(); return; }
+    const last = i === TOUR.length - 1, el = $('#tour'), had = el.contains(document.activeElement);
+    tourReset(); T.go();
+    el.innerHTML = '<div class="row"><div class="lbl or grow">Quick tour · ' + (i + 1) + ' of ' + TOUR.length + '</div>' + (last ? '' : '<button class="skip" data-a="tourend">Skip tour</button>') + '</div>' +
+      '<div class="h">' + T.t + '</div><p>' + T.d + '</p>' +
+      (i ? '' : '<p class="fine">This is a mockup: you are seeing the app as Scott, the other guys are made up, and nothing is saved.</p>') +
+      '<div class="row">' + (i ? '<button class="btn sm sec" data-a="tour" data-v="' + (i - 1) + '">Back</button>' : '') + '<button class="btn sm or wide" data-a="tour" data-v="' + (i + 1) + '">' + (last ? 'Got it' : 'Next') + '</button></div>';
+    render(); // shows the tour card first, then lays the page out in the space above it
+    const view = $('#view'), sp = T.spot && $(T.spot, view);
+    if (sp) { sp.classList.add('spot'); view.scrollTop += sp.getBoundingClientRect().top - view.getBoundingClientRect().top - 34; }
+    if (had) $('.or.wide', el).focus({ preventScroll: true }); // keyboard users keep their place on Next
   },
+  tourend() { if (TS === null) return; tourReset(); TS = null; render(); },
   checkin() {
     S.ci = S.myPct; S.pick.vibes = 0;
     openSheet('<div class="lbl or">Quick check-in</div><div class="h xl">Ten seconds, no typing needed</div>' +

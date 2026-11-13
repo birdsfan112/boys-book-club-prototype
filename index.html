@@ -10,8 +10,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="BBC">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="apple-touch-icon" href="icon-180.png?v=mwf64fdm">
-<link rel="icon" type="image/png" href="icon-192.png?v=mwf64fdm">
+<link rel="apple-touch-icon" href="icon-180.png?v=mwf7wjs1">
+<link rel="icon" type="image/png" href="icon-192.png?v=mwf7wjs1">
 <title>Boys Book Club</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&amp;family=Barlow:wght@400;500;600&amp;display=swap">
@@ -125,12 +125,22 @@ textarea{min-height:110px;resize:vertical}
 .snip p{font-size:14px;line-height:20px}
 .priv{display:flex;gap:8px;align-items:flex-start;padding:10px 12px;border-radius:12px;background:color-mix(in srgb,var(--blue) 14%,var(--ground));font-size:13px;line-height:18px}
 .priv svg,.link svg{flex-shrink:0;margin-top:1px}
-@media (prefers-reduced-motion:reduce){.sheet{animation:none}.toast{transition:none}}
+.tour{position:relative;z-index:2;margin:0 12px 10px;padding:10px 14px 12px;border:2px solid var(--orange);border-radius:14px;background:var(--surface);box-shadow:0 -8px 20px rgba(0,0,0,.2);display:flex;flex-direction:column;gap:6px}
+.tour p{font-size:14px;line-height:19px}
+.tour .row:last-child{margin-top:4px}
+.skip{min-height:36px;margin:-8px -6px -8px 0;padding:0 6px;border:0;background:transparent;color:var(--muted);font-size:13px;font-weight:600;text-decoration:underline}
+.spot{outline:3px solid var(--orange);outline-offset:3px}
+.touring .foot,.touring .tabs{pointer-events:none}
+.touring .foot:not(.comp){padding-top:0}
+@keyframes nudge{50%{transform:translateY(-5px)}}
+.tour.nudge{animation:nudge .25s ease-out}
+@media (prefers-reduced-motion:reduce){.sheet,.tour.nudge{animation:none}.toast{transition:none}}
 </style>
 </head>
 <body>
 <div class="app">
   <div class="view" id="view"></div>
+  <div class="tour" id="tour" role="region" aria-label="Quick tour" hidden></div>
   <div class="foot" id="foot"></div>
   <nav class="tabs" id="tabs" aria-label="Main">
     <button data-a="tab" data-v="club"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"></circle><path d="M3 20a6 6 0 0 1 12 0"></path><circle cx="17" cy="9" r="2.5"></circle><path d="M16 14.5a5 5 0 0 1 5 5.5"></path></svg>CLUB</button>
@@ -143,8 +153,8 @@ textarea{min-height:110px;resize:vertical}
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 </div>
 
-<script src="data.js?v=mwf64fdm" charset="utf-8"></script>
-<script src="app.js?v=mwf64fdm" charset="utf-8"></script>
-<script src="ui.js?v=mwf64fdm" charset="utf-8"></script>
+<script src="data.js?v=mwf7wjs1" charset="utf-8"></script>
+<script src="app.js?v=mwf7wjs1" charset="utf-8"></script>
+<script src="ui.js?v=mwf7wjs1" charset="utf-8"></script>
 </body>
 </html>

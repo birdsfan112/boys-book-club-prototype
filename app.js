@@ -5,6 +5,9 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;'
 
 // pos = where "you" (Scott) are in each friend's book. null = unknown, so everything stays locked.
 const S = { tab: 'club', page: null, pos: { gs: 100, phm: 10, wager: null }, myPct: 42, rx: {}, extra: [], intro: true, finished: false, chat: [], step: 0 };
+// While the tour runs, TS holds a saved copy of S. The tour walks the real pages on a scratch state
+// and puts the reader's own state back when it ends. null = no tour running. See ui.js.
+let TS = null;
 
 const svg = (d, w) => '<svg width="' + (w || 16) + '" height="' + (w || 16) + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + d + '</svg>';
 const IC = {
@@ -129,7 +132,11 @@ function vRecs() {
 }
 
 function render(keep) {
-  const v = $('#view'), p = S.page, top = v.scrollTop, chat = p && p[0] === 'chat';
+  const v = $('#view'), p = S.page, top = v.scrollTop, chat = p && p[0] === 'chat', touring = TS !== null;
+  // The tour card sits in the layout (not on top of it), so the page it describes stays fully visible above it.
+  $('#tour').hidden = !touring;
+  $('.app').classList.toggle('touring', touring);
+  $('#foot').inert = $('#tabs').inert = touring;
   v.innerHTML = chat ? vChat() : p ? vBook(p[1]) : ({ club: vHome, shelf: vShelf, journal: vJournal, recs: vRecs })[S.tab]();
   const f = $('#foot');
   f.className = 'foot' + (chat ? ' comp' : '');
@@ -159,6 +166,10 @@ const ACT = {
 const RNG = {
   pos(val, el) { const rid = el.dataset.v, run = D.runs[rid]; S.pos[run.book] = val; $('#posv').textContent = posLabel(val); $('#notes').innerHTML = notesHtml(run, rid); }
 };
-document.addEventListener('click', e => { const el = e.target.closest('[data-a]'); if (el && ACT[el.dataset.a]) ACT[el.dataset.a](el.dataset.v, el); });
+document.addEventListener('click', e => {
+  // During the tour the page is for looking (it still scrolls). A tap on it bounces the tour card instead.
+  if (TS !== null && !e.target.closest('#tour')) { const t = $('#tour'); t.classList.remove('nudge'); void t.offsetWidth; t.classList.add('nudge'); return; }
+  const el = e.target.closest('[data-a]'); if (el && ACT[el.dataset.a]) ACT[el.dataset.a](el.dataset.v, el);
+});
 document.addEventListener('input', e => { const el = e.target; if (el.dataset && el.dataset.range && RNG[el.dataset.range]) RNG[el.dataset.range](+el.value, el); });
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSheet(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeSheet(); if (TS !== null) ACT.tourend(); } });
