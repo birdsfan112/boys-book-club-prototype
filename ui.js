@@ -9,6 +9,8 @@ const WRAPN = [
 // (the reader's own state is saved in TS and put back at the end). spot = the part of the page to outline and scroll to.
 const convo = n => D.script.slice(0, n).reduce((a, s, i) => a.concat(i < n - 1 ? [{ c: s.c }, { u: s.chips[0] }] : [{ c: s.c }]), []);
 const TOUR = [
+  { t: 'Welcome to Boys Book Club', d: 'This is the home page, where you see what the guys are reading and what they think. Here is a quick tour of the rest, one page at a time.',
+    go() { S.page = null; S.tab = 'club'; } }, // step 0 is the welcome on the home page; it is not counted in "N of 7"
   { t: 'Talk about your book', d: 'Tell Claude what you think of what you are reading. Type, dictate, or hold the mic and ramble. It asks good questions and remembers what you said last time.',
     go() { S.page = ['chat']; S.chat = convo(3); S.step = 2; S.ended = false; } },
   { t: 'Ramble. Claude does the sharing', d: 'Your friends never see the conversation, so say how you really feel and skip the proofreading. Claude writes this short, spoiler-free summary for the club and backs it up with a few snippets of your own words. Edit it, drop a snippet, or keep the whole thing to yourself.',
@@ -158,13 +160,14 @@ Object.assign(ACT, {
     if (!T) { ACT.tourend(); return; }
     const last = i === TOUR.length - 1, el = $('#tour'), had = el.contains(document.activeElement);
     tourReset(); T.go();
-    el.innerHTML = '<div class="row"><div class="lbl or grow">Quick tour · ' + (i + 1) + ' of ' + TOUR.length + '</div>' + (last ? '' : '<button class="skip" data-a="tourend">Skip tour</button>') + '</div>' +
+    el.innerHTML = '<div class="row"><div class="lbl or grow">Quick tour' + (i ? ' · ' + i + ' of ' + (TOUR.length - 1) : '') + '</div>' + (last ? '' : '<button class="skip" data-a="tourend">Skip tour</button>') + '</div>' +
       '<div class="h">' + T.t + '</div><p>' + T.d + '</p>' +
-      (i ? '' : '<p class="fine">This is a mockup: you are seeing the app as Scott, the other guys are made up, and nothing is saved.</p>') +
-      '<div class="row">' + (i ? '<button class="btn sm sec" data-a="tour" data-v="' + (i - 1) + '">Back</button>' : '') + '<button class="btn sm or wide" data-a="tour" data-v="' + (i + 1) + '">' + (last ? 'Got it' : 'Next') + '</button></div>';
+      (i ? '' : '<p class="fine">This is a mockup, and you are seeing the app as Scott.</p>') +
+      '<div class="row">' + (i ? '<button class="btn sm sec" data-a="tour" data-v="' + (i - 1) + '">Back</button>' : '') + '<button class="btn sm or wide" data-a="tour" data-v="' + (i + 1) + '">' + (last ? 'Got it' : i ? 'Next' : 'Start the tour') + '</button></div>';
     render(); // shows the tour card first, then lays the page out in the space above it
     const view = $('#view'), sp = T.spot && $(T.spot, view);
     if (sp) { sp.classList.add('spot'); view.scrollTop += sp.getBoundingClientRect().top - view.getBoundingClientRect().top - 34; }
+    else if (!i) view.scrollTop = 0; // the welcome shows the home page from the top
     if (had) $('.or.wide', el).focus({ preventScroll: true }); // keyboard users keep their place on Next
   },
   tourend() { if (TS === null) return; tourReset(); TS = null; render(); },
