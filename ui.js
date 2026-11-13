@@ -5,19 +5,33 @@ const WRAPN = [
   { p: 48, at: '48%', line: 'Scott thinks the specific entities are the most inventive part so far.', q: 'The specific entities are very creative and interesting.' },
   { p: 48, at: '48%', line: 'He is curious where the story is headed from here.', q: "I'm very curious where we go from here." }
 ];
-const goHome = () => { closeSheet(); S.page = null; S.tab = 'club'; S.intro = false; render(); };
+const TOUR = [
+  ['Talk about your book', 'Tell Claude what you think of what you are reading. Type, dictate, or hold the mic and ramble. It asks good questions and remembers what you said last time.'],
+  ['Private by default', "Your friends never see the conversation, so say how you really feel. The club gets a short, spoiler-free summary that you can edit or keep to yourself. Your exact words only go out after you've looked at them."],
+  ['Spoilers stay locked', "Your friends' detailed notes are stamped with where they were in the book. Each one unlocks only after you pass that point."],
+  ['Find your next book', 'Recs come from your own shelf and from what the club is loving. Or just ask Claude for something.']
+];
+const goHome = () => { closeSheet(); S.page = null; S.tab = 'club'; render(); };
 
 // ---------- Journal chat (scripted) ----------
 function vChat() {
   if (!S.chat.length) S.chat.push({ c: D.script[0].c });
   const cur = D.script[S.step] || { wrap: true };
   const idle = !S.typing && !!S.chat[S.chat.length - 1].c;
-  return '<div class="navb"><button class="ib" data-a="back" aria-label="Back">' + IC.back + '</button><div class="lbl grow">Journal · Antimemetics</div><button class="btn sm or" data-a="wrap">Wrap up</button></div>' +
-    '<p class="fine">Private to you and Claude. Sample conversation: the replies are scripted in this mockup.</p><div class="msgs">' +
+  // Journaling is the main event. Sharing is a small card at the very end, not a separate step.
+  const end = !S.ended ? '' : '<div class="card pc"><div class="lbl or">For the club · spoiler-free postcard</div><p>' + esc(S.draft) + '</p>' +
+    '<button class="link" data-a="review">' + IC.lock + '<span>2 deep notes, locked until a friend passes 48%. Review</span></button>' +
+    '<button class="btn sm or wide" data-a="post">Looks good, post it</button>' +
+    '<div class="row"><button class="btn sm sec wide" data-a="edit">Edit</button><button class="btn sm sec wide" data-a="private">Keep private</button></div>' +
+    "<p class=\"fine\">Do nothing and it posts on its own in about two hours. Your exact words are held back until you've looked at them.</p></div>";
+  return '<div class="navb"><button class="ib" data-a="back" aria-label="Back">' + IC.back + '</button><div class="lbl grow">Journal · Antimemetics</div>' + (S.ended ? '' : '<button class="btn sm sec" data-a="wrap">Done</button>') + '</div>' +
+    '<div class="priv">' + IC.lock + "<span><b>Private.</b> Your friends never see this chat. The club gets a short summary, and your exact words go out only after you've seen them. So say how you really feel.</span></div>" +
+    '<p class="fine">Mockup: Claude\'s replies here are scripted.</p><div class="msgs">' +
     S.chat.map(m => m.c ? '<div class="b c">' + esc(m.c) + '</div>' : '<div class="b u">' + esc(m.u) + '</div>' + (m.diag ? '<div class="diag">' + esc(m.diag) + '</div>' : '')).join('') +
-    (S.typing ? '<div class="b c" aria-label="Claude is typing">…</div>' : '') + '</div>' +
-    (idle && cur.chips ? '<div class="chips">' + cur.chips.map(c => '<button class="chip" data-a="say" data-v="' + esc(c) + '">' + esc(c) + '</button>').join('') + '</div>' : '') +
-    (idle && cur.wrap ? '<button class="btn or wide" data-a="wrap">Wrap up and draft my postcard</button>' : '');
+    (S.typing ? '<div class="b c" aria-label="Claude is typing">…</div>' : '') +
+    (S.ended ? '<div class="b c">Saved to your journal. Here\'s the short version I\'d pass along to the guys.</div>' : '') + '</div>' + end +
+    (!S.ended && idle && cur.chips ? '<div class="chips">' + cur.chips.map(c => '<button class="chip" data-a="say" data-v="' + esc(c) + '">' + esc(c) + '</button>').join('') + '</div>' : '') +
+    (!S.ended && idle && cur.wrap ? '<button class="btn sec wide" data-a="wrap">Done for now</button>' : '');
 }
 function composer() {
   return '<button class="round mic" id="mic" aria-label="Hold to record a voice memo">' + IC.mic + '</button>' +
@@ -29,12 +43,13 @@ function say(text, diag) {
   text = String(text || '').trim().slice(0, 600);
   if (!text || S.typing) return;
   S.chat.push({ u: text, diag: diag });
+  S.ended = false; // saying more reopens the conversation; the share card comes back at the next Done
   S.step++; S.typing = true; chatPaint();
   setTimeout(() => {
     const sc = D.script[S.step];
     S.typing = false;
     if (sc && sc.pct) S.myPct = sc.pct;
-    S.chat.push({ c: sc ? sc.c : "That's as far as the scripted demo goes. In the real app I'd keep talking as long as you want. Hit Wrap up to see what gets shared." });
+    S.chat.push({ c: sc ? sc.c : "That's as far as the scripted demo goes. In the real app I'd keep talking as long as you want. Tap Done when you're finished." });
     chatPaint();
   }, 700);
 }
@@ -91,7 +106,8 @@ const VERD = ['Loved it', 'Liked it', 'Mixed', 'Not for me'];
 
 function wrapSheet(keep) {
   const s = $('#sheet'), top = s.scrollTop;
-  openSheet('<div class="lbl or">Wrap-up</div><div class="h xl">Here\'s what I\'d share</div>' +
+  S.seenQ = true; // opening this sheet is the "glance" that releases the reader's quoted words
+  openSheet('<div class="lbl or">From today\'s journal</div><div class="h xl">What the club gets</div>' +
     '<div class="lbl">Postcard · spoiler-free, the whole club sees it</div>' +
     (S.tweak ? '<textarea id="draft" maxlength="500" aria-label="Edit your postcard">' + esc(S.draft) + '</textarea>' : '<div class="card pc"><p>' + esc(S.draft) + '</p></div>') +
     '<div class="lbl">Deep notes · locked until a friend passes 48%</div>' +
@@ -108,16 +124,27 @@ Object.assign(ACT, {
   send() { const i = $('#say'); if (!i) return; say(i.value); i.value = ''; },
   say(v) { say(v); },
   pick(v, el) { el.parentNode.querySelectorAll('.chip').forEach(c => { c.classList.toggle('on', c === el); c.setAttribute('aria-pressed', c === el); }); S.pick[el.parentNode.id] = +v; },
-  wrap() { S.draft = S.draft || D.draft; S.tweak = false; S.share = S.share || [true, true]; wrapSheet(); },
+  wrap() { S.draft = S.draft || D.draft; S.share = S.share || [true, true]; S.ended = true; chatPaint(); },
+  review() { S.tweak = false; wrapSheet(); },
+  edit() { S.tweak = true; wrapSheet(); },
   tweak() { grabDraft(); S.tweak = !S.tweak; wrapSheet(true); },
   share(v) { grabDraft(); S.share[v] = !S.share[v]; wrapSheet(true); },
-  private() { goHome(); toast('Kept private. Nothing was posted.'); },
+  private() { S.ended = false; goHome(); toast('Kept private. Still saved in your journal.'); },
   post() {
     grabDraft();
-    if (!S.posted) { S.posted = true; WRAPN.forEach((n, i) => D.runs['scott-anti'].notes.push({ p: n.p, at: n.at, line: n.line, q: S.share[i] ? n.q : '' })); }
-    S.myPct = Math.max(S.myPct, 48);
+    const held = !S.seenQ;
+    if (!S.posted) { S.posted = true; WRAPN.forEach((n, i) => D.runs['scott-anti'].notes.push({ p: n.p, at: n.at, line: n.line, q: !held && S.share[i] ? n.q : '' })); }
+    S.myPct = Math.max(S.myPct, 48); S.ended = false;
     S.extra.unshift({ id: 'me' + Date.now(), who: 'scott', run: 'scott-anti', when: 'Just now', where: 'about ' + S.myPct + '%', text: S.draft });
-    goHome(); toast('Posted. Deep notes stay locked until the guys catch up.');
+    goHome(); toast(held ? 'Posted. Your exact words stay held until you review them.' : 'Posted. Deep notes stay locked until the guys catch up.');
+  },
+  tour(v) {
+    const i = +v || 0, T = TOUR[i];
+    if (!T) { closeSheet(); return; }
+    const last = i === TOUR.length - 1;
+    openSheet('<div class="lbl or">Quick tour · ' + (i + 1) + ' of ' + TOUR.length + '</div><div class="h xl">' + T[0] + '</div><p>' + T[1] + '</p>' +
+      (i ? '' : '<p class="fine">This is a mockup: sample data, scripted replies, nothing is saved. You are seeing the app as Scott, and the other guys are made up.</p>') +
+      '<div class="row">' + (last ? '' : '<button class="btn sm sec" data-a="close">Skip</button>') + '<button class="btn sm or wide" data-a="tour" data-v="' + (i + 1) + '">' + (last ? 'Got it' : 'Next') + '</button></div>');
   },
   checkin() {
     S.ci = S.myPct; S.pick.vibes = 0;
@@ -162,12 +189,12 @@ Object.assign(ACT, {
     const cur = ['auto', 'light', 'dark'].indexOf(S.theme || 'auto');
     openSheet('<div class="row">' + av('scott') + '<div class="grow"><div class="nm">Scott</div><div class="sub">This is you in the mockup</div></div></div>' +
       '<div class="lbl">Look</div><div class="chips">' + ['Match my phone', 'Light', 'Dark'].map((o, i) => '<button class="chip' + (i === cur ? ' on' : '') + '" data-a="theme" data-v="' + ['auto', 'light', 'dark'][i] + '" aria-pressed="' + (i === cur) + '">' + o + '</button>').join('') + '</div>' +
-      '<button class="btn sm sec" data-a="onboard">How a new member starts</button><button class="btn sm sec" data-a="showintro">Show the intro card again</button><button class="btn sm" data-a="close">Close</button>');
+      '<button class="btn sm sec" data-a="tour" data-v="0">Take the tour again</button><button class="btn sm sec" data-a="onboard">How a new member starts</button><button class="btn sm" data-a="close">Close</button>');
   },
-  theme(v) { S.theme = v; if (v === 'auto') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = v; ACT.profile(); },
-  showintro() { S.intro = true; goHome(); S.intro = true; render(); }
+  theme(v) { S.theme = v; if (v === 'auto') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = v; ACT.profile(); }
 });
 S.pick = {};
 RNG.ci = val => { S.ci = val; $('#civ').textContent = 'About ' + val + '%'; };
 
 render();
+ACT.tour(0); // first visit opens the tour

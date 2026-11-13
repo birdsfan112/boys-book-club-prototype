@@ -65,10 +65,8 @@ function notesHtml(run, rid) {
 
 function vHome() {
   const b = D.books.anti;
-  const intro = '<div class="card demo"><div class="lbl or">Start here</div>' +
-    "<p><b>This is a mockup.</b> Sample data, nothing is saved, and Claude's replies are scripted. You're seeing the app as Scott. Teddy, Marcus, Owen and Nate are made up.</p>" +
-    "<p class=\"sub\">Try this: tap Owen's deep notes and drag the slider. Then hit Talk About Your Book.</p>" +
-    '<div class="row"><button class="btn sm sec wide" data-a="onboard">How you\'d start</button><button class="btn sm wide" data-a="intro">Got it</button></div></div>';
+  const intro = '<div class="card demo" style="flex-direction:row;align-items:center;gap:10px"><p class="sub grow"><b>Mockup.</b> Sample data, nothing is saved, friends are made up.</p>' +
+    '<button class="btn sm sec" data-a="tour" data-v="0">Tour</button></div>';
   return '<header class="hdr"><div><div class="wm">BBC</div><div class="lbl">Boys Book Club · Est. 7th grade</div></div>' +
     '<button class="me" data-a="profile" aria-label="Your profile and settings">S</button></header>' +
     (S.intro ? intro : '') +
@@ -119,7 +117,7 @@ function vShelf() {
 function vJournal() {
   return '<header class="hdr"><div><div class="h xl">JOURNAL</div><div class="lbl">Private to you and Claude</div></div></header>' +
     '<button class="btn or wide" data-a="chat">' + IC.mic + 'Talk about your book</button>' +
-    '<div class="card"><p>Your friends never see these conversations. Only the postcard and deep notes you approve go to the club.</p>' +
+    '<div class="card"><p><b>Private by default.</b> Your friends never see these conversations, so say how you really feel. The club gets short summaries, and your exact words go out only after you\'ve seen them.</p>' +
     '<p class="fine">Straight talk: Scott hosts the app, so the database lives in his account and he could technically open it. How that gets locked down is something the club decides before launch.</p></div>' +
     D.journal.map(j => '<div class="card"><div class="row"><div class="lbl or grow">' + j.d + ' · ' + esc(j.at) + '</div></div><div class="nm">' + D.books[j.book].t + '</div><blockquote>“' + esc(j.q) + '”</blockquote></div>').join('');
 }

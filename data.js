@@ -90,7 +90,7 @@ window.BBC = {
     { c: 'Hey Scott. Last time you\'d just finished Part 2, chapter 2 and said you were "very curious where we go from here." Where are you now?', chips: ['Just finished Part 2, chapter 3', 'About halfway, I think'] },
     { c: "Got it. I'll call that roughly 48% and keep every spoiler lock on the safe side. What's sticking with you?", chips: ['The specific entities are very creative and interesting', "It's engaging and very imaginative"], pct: 48 },
     { c: 'That fits what you said after chapter 1, that it reminded you of the video game Control. Still feel that way, or has it become its own thing?', chips: ['Still very Control', 'More its own thing now'] },
-    { c: "Love it. Want me to wrap up? I'll draft a spoiler-free postcard for the guys and keep the specifics locked until they catch up.", wrap: true }
+    { c: "Noted. You went in on the Control vibe and at the halfway mark you're still curious where it lands, which is a good sign. I'll remember this for next time. Keep talking, or call it for today?", wrap: true }
   ],
   draft: 'Scott is about halfway through There Is No Antimemetics Division and calls it "interesting, engaging, and very creative and imaginative." Big Control (the video game) energy. Very curious where it goes.'
 };
